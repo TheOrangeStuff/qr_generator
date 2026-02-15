@@ -2,6 +2,7 @@ version: "3.8"
 
 services:
   qr-generator:
+    image: ghcr.io/theorangestuff/qr_generator:latest
     build: .
     container_name: qr-generator
     ports:
