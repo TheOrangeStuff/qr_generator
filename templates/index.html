@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code Generator</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      text-align: center;
+      color: #00d4ff;
+      font-size: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    /* Generator Card */
+    .card {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .card h2 {
+      color: #00d4ff;
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 0.85rem 1rem;
+      border: 2px solid #2a2a4a;
+      border-radius: 8px;
+      background: #0f0f23;
+      color: #e0e0e0;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: #00d4ff;
+    }
+
+    button {
+      padding: 0.85rem 1.75rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: #00d4ff;
+      color: #0f0f23;
+    }
+    .btn-primary:hover { background: #00b8d9; }
+    .btn-primary:disabled { background: #2a2a4a; color: #666; cursor: not-allowed; }
+
+    .btn-download {
+      background: #00c853;
+      color: #0f0f23;
+    }
+    .btn-download:hover { background: #00a844; }
+
+    .btn-secondary {
+      background: #2a2a4a;
+      color: #e0e0e0;
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+    }
+    .btn-secondary:hover { background: #3a3a5a; }
+
+    /* QR Result */
+    .qr-result {
+      display: none;
+      text-align: center;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #2a2a4a;
+    }
+
+    .qr-result.visible { display: block; }
+
+    .qr-result img {
+      max-width: 280px;
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .qr-result .url-label {
+      color: #888;
+      font-size: 0.85rem;
+      word-break: break-all;
+      margin-bottom: 1rem;
+    }
+
+    /* History */
+    .history-list {
+      list-style: none;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid #2a2a4a;
+      gap: 1rem;
+    }
+
+    .history-item:last-child { border-bottom: none; }
+
+    .history-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .history-url {
+      color: #00d4ff;
+      font-size: 0.95rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-date {
+      color: #666;
+      font-size: 0.75rem;
+      margin-top: 0.2rem;
+    }
+
+    .history-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #666;
+      padding: 2rem;
+      font-style: italic;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.visible { display: flex; }
+
+    .modal {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal img {
+      max-width: 260px;
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .modal .url-label {
+      color: #888;
+      font-size: 0.85rem;
+      word-break: break-all;
+      margin-bottom: 1rem;
+    }
+
+    .modal-close {
+      margin-top: 0.5rem;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 20px; height: 20px;
+      border: 3px solid #2a2a4a;
+      border-top-color: #00d4ff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 0.5rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 600px) {
+      .input-group { flex-direction: column; }
+      .history-item { flex-direction: column; align-items: flex-start; }
+      .history-actions { margin-top: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>QR Code Generator</h1>
+
+    <!-- Generator -->
+    <div class="card">
+      <h2>Generate QR Code</h2>
+      <div class="input-group">
+        <input type="text" id="urlInput" placeholder="Enter a URL (e.g. https://example.com)" autofocus>
+        <button class="btn-primary" id="generateBtn" onclick="generateQR()">Generate</button>
+      </div>
+      <div class="qr-result" id="qrResult">
+        <img id="qrImage" src="" alt="QR Code">
+        <div class="url-label" id="qrUrl"></div>
+        <button class="btn-download" onclick="downloadCurrent()">Download PNG</button>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="card">
+      <h2>History</h2>
+      <ul class="history-list" id="historyList">
+        <li class="empty-state">No QR codes generated yet.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- View Modal -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <img id="modalImage" src="" alt="QR Code">
+      <div class="url-label" id="modalUrl"></div>
+      <div>
+        <button class="btn-download" id="modalDownload" onclick="">Download PNG</button>
+      </div>
+      <button class="btn-secondary modal-close" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    let currentFilename = null;
+
+    document.getElementById('urlInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') generateQR();
+    });
+
+    async function generateQR() {
+      const input = document.getElementById('urlInput');
+      const btn = document.getElementById('generateBtn');
+      const url = input.value.trim();
+      if (!url) return;
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Generating...';
+
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        document.getElementById('qrImage').src = 'data:image/png;base64,' + data.image;
+        document.getElementById('qrUrl').textContent = data.url;
+        currentFilename = data.filename;
+        document.getElementById('qrResult').classList.add('visible');
+        input.value = '';
+        loadHistory();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Generate';
+      }
+    }
+
+    function downloadCurrent() {
+      if (currentFilename) {
+        window.location.href = '/download/' + currentFilename;
+      }
+    }
+
+    async function loadHistory() {
+      const res = await fetch('/api/history');
+      const history = await res.json();
+      const list = document.getElementById('historyList');
+
+      if (history.length === 0) {
+        list.innerHTML = '<li class="empty-state">No QR codes generated yet.</li>';
+        return;
+      }
+
+      list.innerHTML = history.map(entry => {
+        const date = new Date(entry.created_at).toLocaleString();
+        return `
+          <li class="history-item">
+            <div class="history-info">
+              <div class="history-url" title="${escapeHtml(entry.url)}">${escapeHtml(entry.url)}</div>
+              <div class="history-date">${date}</div>
+            </div>
+            <div class="history-actions">
+              <button class="btn-secondary" onclick="viewQR('${entry.id}', '${escapeHtml(entry.url)}', '${entry.filename}')">View</button>
+              <button class="btn-secondary" onclick="window.location.href='/download/${entry.filename}'">Download</button>
+            </div>
+          </li>`;
+      }).join('');
+    }
+
+    async function viewQR(id, url, filename) {
+      const res = await fetch('/api/qr/' + id);
+      const data = await res.json();
+      document.getElementById('modalImage').src = 'data:image/png;base64,' + data.image;
+      document.getElementById('modalUrl').textContent = url;
+      document.getElementById('modalDownload').onclick = () => window.location.href = '/download/' + filename;
+      document.getElementById('modal').classList.add('visible');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('visible');
+    }
+
+    document.getElementById('modal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    function escapeHtml(text) {
+      const d = document.createElement('div');
+      d.textContent = text;
+      return d.innerHTML;
+    }
+
+    // Load history on page load
+    loadHistory();
+  </script>
+</body>
+</html>
