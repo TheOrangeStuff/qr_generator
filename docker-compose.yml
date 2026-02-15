@@ -5,7 +5,7 @@ services:
     build: .
     container_name: qr-generator
     ports:
-      - "8080:5000"
+      - "17070:5000"
     volumes:
       - qr_data:/data
     restart: unless-stopped
